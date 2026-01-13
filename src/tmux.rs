@@ -19,12 +19,10 @@ pub fn get_active_sessions() -> HashSet<String> {
         .output();
 
     match output {
-        Ok(o) if o.status.success() => {
-            String::from_utf8_lossy(&o.stdout)
-                .lines()
-                .map(|s| s.to_string())
-                .collect()
-        }
+        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout)
+            .lines()
+            .map(|s| s.to_string())
+            .collect(),
         _ => HashSet::new(),
     }
 }
@@ -67,11 +65,6 @@ pub fn is_large_display() -> bool {
         }
     }
     false
-}
-
-/// Create a new tmux session with the workspace layout
-pub fn create_session(session: &str, dir: &Path) -> Result<()> {
-    create_session_with_title(session, dir, session)
 }
 
 /// Create a new tmux session with custom window title
@@ -119,7 +112,11 @@ fn create_large_layout(session: &str, dir: &str, env: &[String]) -> Result<()> {
     send_keys(session, "0.1", "texplore")?;
     send_keys(session, "0.2", "droid")?;
     send_keys(session, "0.3", "ls -la")?;
-    send_keys(session, "0.4", "tsql postgres://postgres:123@localhost:5432/basalt")?;
+    send_keys(
+        session,
+        "0.4",
+        "tsql postgres://postgres:123@localhost:5432/basalt",
+    )?;
 
     select_pane(session, "0.2")?;
     Ok(())
@@ -139,7 +136,13 @@ fn create_small_layout(session: &str, dir: &str, env: &[String]) -> Result<()> {
     Ok(())
 }
 
-fn run_tmux_split(session: &str, target: &str, dir: &str, env: &[String], extra_args: &[&str]) -> Result<()> {
+fn run_tmux_split(
+    session: &str,
+    target: &str,
+    dir: &str,
+    env: &[String],
+    extra_args: &[&str],
+) -> Result<()> {
     let target_str = format!("{}:{}", session, target);
     let mut args = vec!["split-window"];
     args.extend(extra_args);
@@ -157,7 +160,13 @@ fn run_tmux_split(session: &str, target: &str, dir: &str, env: &[String], extra_
 
 fn send_keys(session: &str, target: &str, cmd: &str) -> Result<()> {
     Command::new("tmux")
-        .args(["send-keys", "-t", &format!("{}:{}", session, target), cmd, "C-m"])
+        .args([
+            "send-keys",
+            "-t",
+            &format!("{}:{}", session, target),
+            cmd,
+            "C-m",
+        ])
         .output()
         .context("Failed to send keys")?;
     Ok(())
@@ -187,7 +196,12 @@ fn get_ghostty_env() -> Vec<String> {
     }
 
     // Pass through these if they exist
-    for key in ["TERM_PROGRAM_VERSION", "GHOSTTY_RESOURCES_DIR", "GHOSTTY_BIN_DIR", "GHOSTTY_SHELL_FEATURES"] {
+    for key in [
+        "TERM_PROGRAM_VERSION",
+        "GHOSTTY_RESOURCES_DIR",
+        "GHOSTTY_BIN_DIR",
+        "GHOSTTY_SHELL_FEATURES",
+    ] {
         if let Ok(value) = std::env::var(key) {
             env.push("-e".to_string());
             env.push(format!("{}={}", key, value));
@@ -203,10 +217,7 @@ mod exec {
 
     pub fn execvp(program: &str, args: &[&str]) -> std::io::Error {
         let c_program = CString::new(program).unwrap();
-        let c_args: Vec<CString> = args
-            .iter()
-            .map(|s| CString::new(*s).unwrap())
-            .collect();
+        let c_args: Vec<CString> = args.iter().map(|s| CString::new(*s).unwrap()).collect();
         let c_arg_ptrs: Vec<*const libc::c_char> = c_args
             .iter()
             .map(|s| s.as_ptr())

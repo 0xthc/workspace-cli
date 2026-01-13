@@ -7,7 +7,6 @@ use std::process::Command;
 pub struct Worktree {
     pub path: PathBuf,
     pub branch: String,
-    pub is_detached: bool,
 }
 
 /// Get the git root directory for a path
@@ -75,7 +74,6 @@ pub fn list_worktrees(git_root: &Path) -> Result<Vec<Worktree>> {
                 worktrees.push(Worktree {
                     path,
                     branch: branch.to_string(),
-                    is_detached: false,
                 });
             }
         } else if line.is_empty() {
@@ -84,7 +82,6 @@ pub fn list_worktrees(git_root: &Path) -> Result<Vec<Worktree>> {
                 worktrees.push(Worktree {
                     path,
                     branch: format!("detached:{}", &head[..8.min(head.len())]),
-                    is_detached: true,
                 });
             }
         }
@@ -96,7 +93,6 @@ pub fn list_worktrees(git_root: &Path) -> Result<Vec<Worktree>> {
             worktrees.push(Worktree {
                 path,
                 branch: format!("detached:{}", &head[..8.min(head.len())]),
-                is_detached: true,
             });
         }
     }
@@ -105,7 +101,12 @@ pub fn list_worktrees(git_root: &Path) -> Result<Vec<Worktree>> {
 }
 
 /// Create a new worktree
-pub fn create_worktree(git_root: &Path, branch: &str, base: &str, target_path: &Path) -> Result<()> {
+pub fn create_worktree(
+    git_root: &Path,
+    branch: &str,
+    base: &str,
+    target_path: &Path,
+) -> Result<()> {
     // Fetch the base branch first
     let _ = Command::new("git")
         .current_dir(git_root)
@@ -132,12 +133,7 @@ pub fn create_worktree(git_root: &Path, branch: &str, base: &str, target_path: &
     // Try with existing branch
     let result = Command::new("git")
         .current_dir(git_root)
-        .args([
-            "worktree",
-            "add",
-            target_path.to_str().unwrap(),
-            branch,
-        ])
+        .args(["worktree", "add", target_path.to_str().unwrap(), branch])
         .output()?;
 
     if result.status.success() {
@@ -205,7 +201,10 @@ pub fn find_worktree(git_root: &Path, target: &str) -> Result<Option<Worktree>> 
 
     // Try sanitized branch name
     let sanitized = sanitize_branch(target);
-    if let Some(wt) = worktrees.iter().find(|wt| sanitize_branch(&wt.branch) == sanitized) {
+    if let Some(wt) = worktrees
+        .iter()
+        .find(|wt| sanitize_branch(&wt.branch) == sanitized)
+    {
         return Ok(Some(wt.clone()));
     }
 
@@ -216,9 +215,10 @@ pub fn find_worktree(git_root: &Path, target: &str) -> Result<Option<Worktree>> 
     }
 
     // Try to match by directory name
-    if let Some(wt) = worktrees.iter().find(|wt| {
-        wt.path.file_name().map(|n| n.to_string_lossy()) == Some(target.into())
-    }) {
+    if let Some(wt) = worktrees
+        .iter()
+        .find(|wt| wt.path.file_name().map(|n| n.to_string_lossy()) == Some(target.into()))
+    {
         return Ok(Some(wt.clone()));
     }
 
