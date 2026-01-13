@@ -17,11 +17,11 @@ struct Cli {
 
 #[derive(Subcommand)]
 enum Commands {
-    /// Open workspace for a directory (default: current dir)
+    /// Open workspace for a directory, branch, or worktree name
     #[command(alias = "o")]
     Open {
-        /// Path to worktree or git repository
-        path: Option<PathBuf>,
+        /// Path, branch name, or worktree directory name
+        target: Option<String>,
     },
 
     /// Create new worktree and open workspace
@@ -84,7 +84,7 @@ fn main() -> Result<()> {
     let cli = Cli::parse();
 
     match cli.command {
-        Some(Commands::Open { path }) => commands::open(path),
+        Some(Commands::Open { target }) => commands::open(target),
         Some(Commands::New { branch, from }) => commands::new(&branch, &from),
         Some(Commands::List) => commands::list(),
         Some(Commands::Select { path }) => commands::select(path),

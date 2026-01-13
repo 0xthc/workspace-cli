@@ -4,9 +4,28 @@ A CLI tool for managing git worktrees with tmux layouts. Each worktree gets its 
 
 ## Installation
 
+### From GitHub Releases (Recommended)
+
+```bash
+# macOS Apple Silicon
+curl -L https://github.com/0xthc/workspace-cli/releases/latest/download/ws-macos-aarch64.tar.gz | tar xz
+mv ws ~/bin/
+
+# macOS Intel
+curl -L https://github.com/0xthc/workspace-cli/releases/latest/download/ws-macos-x86_64.tar.gz | tar xz
+mv ws ~/bin/
+
+# Linux x86_64
+curl -L https://github.com/0xthc/workspace-cli/releases/latest/download/ws-linux-x86_64.tar.gz | tar xz
+mv ws ~/bin/
+```
+
+### From Source
+
 ```bash
 # Clone and install with dependencies
-cd ~/workspace-cli
+git clone https://github.com/0xthc/workspace-cli.git
+cd workspace-cli
 make install
 
 # Or install just the binary
@@ -23,14 +42,18 @@ ws doctor --install
 
 ```bash
 ws                           # Open workspace for current directory
-ws open /path/to/worktree    # Open specific worktree
+ws open feat/auth            # Open by branch name, path, or directory
 ws new feat/auth             # Create worktree from develop
 ws new hotfix/bug -f main    # Create worktree from main
 ws list                      # List all worktrees with session status
 ws select                    # Interactive worktree picker (fzf)
-ws delete feat/auth          # Delete worktree and its session
+ws status                    # TUI dashboard of worktrees & sessions
+ws delete feat/auth          # Delete worktree, session, and branch
 ws sync                      # Clean up orphaned sessions
+ws sync --create             # Create sessions for worktrees without one
+ws sync --delete             # Delete worktrees without active sessions
 ws doctor                    # Check dependencies
+ws doctor --install          # Install missing dependencies
 ```
 
 ### Aliases

@@ -54,16 +54,28 @@ fn get_window_title(dir: &PathBuf) -> Result<String> {
     }
 }
 
-/// Open workspace for a directory
-pub fn open(path: Option<PathBuf>) -> Result<()> {
-    let dir = match path {
-        Some(p) => p,
+/// Open workspace for a directory, branch name, or worktree name
+pub fn open(target: Option<String>) -> Result<()> {
+    let dir = match target {
+        Some(t) => {
+            let path = PathBuf::from(&t);
+            // If it's an existing path, use it directly
+            if path.exists() {
+                path
+            } else {
+                // Try to find it as a worktree by branch/name
+                let git_root = git::get_root(None).context("Not in a git repository")?;
+                match git::find_worktree(&git_root, &t)? {
+                    Some(wt) => wt.path,
+                    None => anyhow::bail!(
+                        "Not found: '{}' is not a valid path, branch, or worktree name",
+                        t
+                    ),
+                }
+            }
+        }
         None => git::get_root(None).unwrap_or_else(|_| std::env::current_dir().unwrap()),
     };
-
-    if !dir.exists() {
-        anyhow::bail!("Directory not found: {}", dir.display());
-    }
 
     let session = get_session_name(&dir)?;
 
@@ -92,7 +104,7 @@ pub fn new(branch: &str, base: &str) -> Result<()> {
     if wt_path.exists() {
         println!("{} Worktree already exists at {}", "::".yellow().bold(), wt_path.display());
         println!("{} Opening existing worktree...", "::".blue().bold());
-        return open(Some(wt_path));
+        return open(Some(wt_path.display().to_string()));
     }
 
     println!("{} Creating worktree '{}' from '{}'...", "::".blue().bold(), branch, base);
@@ -101,7 +113,7 @@ pub fn new(branch: &str, base: &str) -> Result<()> {
 
     println!("{} Worktree created at {}", "::".green().bold(), wt_path.display());
 
-    open(Some(wt_path))
+    open(Some(wt_path.display().to_string()))
 }
 
 /// List all worktrees with session status
@@ -139,7 +151,7 @@ pub fn list() -> Result<()> {
 pub fn select(direct_path: Option<PathBuf>) -> Result<()> {
     // If direct path provided, just open it
     if let Some(path) = direct_path {
-        return open(Some(path));
+        return open(Some(path.display().to_string()));
     }
 
     let git_root = git::get_root(None).context("Not in a git repository")?;
@@ -212,7 +224,7 @@ pub fn select(direct_path: Option<PathBuf>) -> Result<()> {
         return interactive_create();
     }
 
-    open(Some(PathBuf::from(path)))
+    open(Some(path.to_string()))
 }
 
 fn interactive_create() -> Result<()> {
