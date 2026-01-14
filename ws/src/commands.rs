@@ -1098,16 +1098,13 @@ pub fn ai(tool_name: Option<String>) -> Result<()> {
         return Ok(());
     }
 
-    // Send Ctrl+C to kill current process, then start new AI tool
-    Command::new("tmux")
-        .args(["send-keys", "-t", &target, "C-c"])
-        .output()
-        .context("Failed to send Ctrl+C")?;
+    // Kill any running process in the pane properly
+    kill_pane_processes(&target)?;
 
-    // Small delay to let the process exit
-    std::thread::sleep(std::time::Duration::from_millis(200));
+    // Small delay to let the process exit and shell reset
+    std::thread::sleep(std::time::Duration::from_millis(100));
 
-    // Clear the line and send the new command
+    // Clear the line before sending new command
     Command::new("tmux")
         .args(["send-keys", "-t", &target, "C-u"]) // Clear current line
         .output()
@@ -1124,6 +1121,44 @@ pub fn ai(tool_name: Option<String>) -> Result<()> {
         tool.name(),
         target
     );
+
+    Ok(())
+}
+
+/// Kill any running process in a tmux pane
+fn kill_pane_processes(target: &str) -> Result<()> {
+    // Get the pane's shell PID
+    let pane_pid_output = Command::new("tmux")
+        .args(["display-message", "-p", "-t", target, "#{pane_pid}"])
+        .output()
+        .context("Failed to get pane PID")?;
+
+    let pane_pid = String::from_utf8_lossy(&pane_pid_output.stdout)
+        .trim()
+        .to_string();
+
+    if pane_pid.is_empty() {
+        return Ok(());
+    }
+
+    // Find child processes of the shell
+    let children_output = Command::new("pgrep").args(["-P", &pane_pid]).output();
+
+    if let Ok(output) = children_output {
+        let children = String::from_utf8_lossy(&output.stdout);
+        for child_pid in children.lines() {
+            let child_pid = child_pid.trim();
+            if !child_pid.is_empty() {
+                // Send SIGTERM first (graceful shutdown)
+                let _ = Command::new("kill").args(["-TERM", child_pid]).output();
+            }
+        }
+    }
+
+    // Also send Ctrl+C as fallback (in case process ignores SIGTERM briefly)
+    let _ = Command::new("tmux")
+        .args(["send-keys", "-t", target, "C-c"])
+        .output();
 
     Ok(())
 }
