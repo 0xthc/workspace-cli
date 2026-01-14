@@ -10,6 +10,7 @@ pub enum AiTool {
     Codex,   // OpenAI Codex CLI
     Gemini,  // Google Gemini CLI
     Copilot, // GitHub Copilot CLI
+    Vibe,    // Mistral Vibe CLI
 }
 
 impl AiTool {
@@ -21,6 +22,7 @@ impl AiTool {
             AiTool::Codex => "codex",
             AiTool::Gemini => "gemini",
             AiTool::Copilot => "gh copilot",
+            AiTool::Vibe => "vibe",
         }
     }
 
@@ -32,6 +34,7 @@ impl AiTool {
             AiTool::Codex => "codex",
             AiTool::Gemini => "gemini",
             AiTool::Copilot => "gh",
+            AiTool::Vibe => "vibe",
         }
     }
 
@@ -43,6 +46,7 @@ impl AiTool {
             AiTool::Codex => "OpenAI Codex CLI",
             AiTool::Gemini => "Google Gemini CLI",
             AiTool::Copilot => "GitHub Copilot CLI",
+            AiTool::Vibe => "Mistral Vibe",
         }
     }
 
@@ -54,6 +58,7 @@ impl AiTool {
             "codex" => Some(AiTool::Codex),
             "gemini" => Some(AiTool::Gemini),
             "copilot" | "gh-copilot" => Some(AiTool::Copilot),
+            "vibe" | "mistral-vibe" => Some(AiTool::Vibe),
             _ => None,
         }
     }
@@ -66,6 +71,7 @@ impl AiTool {
             AiTool::Codex,
             AiTool::Gemini,
             AiTool::Copilot,
+            AiTool::Vibe,
         ]
     }
 }
@@ -285,7 +291,7 @@ impl Config {
             r#"# Workspace CLI Configuration
 
 # AI tool for the main coding panel
-# Options: droid (default), claude, codex, gemini, copilot
+# Options: droid (default), claude, codex, gemini, copilot, vibe
 ai_tool = "{}"
 
 # Git TUI for the top-left panel
