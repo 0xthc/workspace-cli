@@ -1104,11 +1104,14 @@ pub fn ai(tool_name: Option<String>) -> Result<()> {
     // Small delay to let the process exit and shell reset
     std::thread::sleep(std::time::Duration::from_millis(100));
 
-    // Clear the line before sending new command
+    // Clear terminal and command line, then start new tool
     Command::new("tmux")
-        .args(["send-keys", "-t", &target, "C-u"]) // Clear current line
+        .args(["send-keys", "-t", &target, "C-u", "clear", "Enter"])
         .output()
-        .context("Failed to clear line")?;
+        .context("Failed to clear terminal")?;
+
+    // Small delay for clear to complete
+    std::thread::sleep(std::time::Duration::from_millis(50));
 
     Command::new("tmux")
         .args(["send-keys", "-t", &target, tool.command(), "Enter"])
