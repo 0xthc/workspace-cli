@@ -20,7 +20,33 @@ use crossterm::{execute, queue};
 use ignore::gitignore::{Gitignore, GitignoreBuilder};
 use std::os::unix::fs::PermissionsExt;
 
+const VERSION: &str = env!("CARGO_PKG_VERSION");
+
 fn main() -> io::Result<()> {
+    // Handle --version and --help before anything else
+    if let Some(arg) = env::args().nth(1) {
+        match arg.as_str() {
+            "--version" | "-V" => {
+                println!("texplore {}", VERSION);
+                return Ok(());
+            }
+            "--help" | "-h" => {
+                println!("texplore {} - Terminal file explorer with git integration", VERSION);
+                println!();
+                println!("Usage: texplore [PATH]");
+                println!();
+                println!("Arguments:");
+                println!("  [PATH]  Directory to explore (default: current directory)");
+                println!();
+                println!("Options:");
+                println!("  -h, --help     Print help");
+                println!("  -V, --version  Print version");
+                return Ok(());
+            }
+            _ => {}
+        }
+    }
+
     let root = match env::args().nth(1) {
         Some(arg) => PathBuf::from(arg),
         None => env::current_dir().unwrap_or_else(|_| PathBuf::from(".")),
