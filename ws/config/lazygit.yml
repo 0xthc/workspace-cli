@@ -4,3 +4,12 @@ customCommands:
     context: 'worktrees'
     command: 'ws select --path {{.SelectedWorktree.Path}}'
     description: 'Open worktree in new tmux session'
+
+  - key: 'Z'
+    context: 'localBranches'
+    command: 'ws delete {{.SelectedLocalBranch.Name}} --force'
+    description: 'Delete worktree, branch, and tmux session'
+    prompts:
+      - type: 'confirm'
+        title: 'Delete worktree and branch'
+        body: 'Delete worktree, tmux session, and branch for {{.SelectedLocalBranch.Name}}?'
