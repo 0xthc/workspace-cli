@@ -135,10 +135,10 @@ fn create_large_layout(
     run_tmux_split(session, "0.0", dir, env, &["-v"])?;
     run_tmux_split(session, "0.3", dir, env, &["-v"])?;
 
-    // Send commands to panes
-    send_keys(session, "0.0", git_cmd)?;
-    send_keys(session, "0.1", explorer_cmd)?;
-    send_keys(session, "0.2", ai_cmd)?;
+    // Send commands to panes (use clear for TUI apps)
+    send_keys_with_clear(session, "0.0", git_cmd)?;
+    send_keys_with_clear(session, "0.1", explorer_cmd)?;
+    send_keys_with_clear(session, "0.2", ai_cmd)?;
     send_keys(session, "0.3", "ls -la")?;
     send_keys(
         session,
@@ -162,10 +162,10 @@ fn create_small_layout(
     run_tmux_split(session, "0.0", dir, env, &["-h", "-p", "62"])?;
     run_tmux_split(session, "0.0", dir, env, &["-v"])?;
 
-    // Send commands to panes
-    send_keys(session, "0.0", git_cmd)?;
-    send_keys(session, "0.1", explorer_cmd)?;
-    send_keys(session, "0.2", ai_cmd)?;
+    // Send commands to panes (use clear for TUI apps)
+    send_keys_with_clear(session, "0.0", git_cmd)?;
+    send_keys_with_clear(session, "0.1", explorer_cmd)?;
+    send_keys_with_clear(session, "0.2", ai_cmd)?;
 
     select_pane(session, "0.2")?;
     Ok(())
@@ -204,6 +204,28 @@ fn send_keys(session: &str, target: &str, cmd: &str) -> Result<()> {
         ])
         .output()
         .context("Failed to send keys")?;
+    Ok(())
+}
+
+/// Send keys with terminal clearing first (for TUI apps)
+fn send_keys_with_clear(session: &str, target: &str, cmd: &str) -> Result<()> {
+    let target_str = format!("{}:{}", session, target);
+
+    // Clear terminal and command line first
+    Command::new("tmux")
+        .args(["send-keys", "-t", &target_str, "C-u", "clear", "C-m"])
+        .output()
+        .context("Failed to clear terminal")?;
+
+    // Small delay for clear to complete
+    std::thread::sleep(std::time::Duration::from_millis(50));
+
+    // Send the actual command
+    Command::new("tmux")
+        .args(["send-keys", "-t", &target_str, cmd, "C-m"])
+        .output()
+        .context("Failed to send keys")?;
+
     Ok(())
 }
 
